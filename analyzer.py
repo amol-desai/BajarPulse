@@ -6,6 +6,57 @@ from dateutil.relativedelta import relativedelta
 import numpy as np
 import pandas.stats.moments as m
 
+def construct_ranking_table(portfolio,lookbackDays=None,oldTable=None,enddate=dt.today(),index=None,silent=False):
+  dfarr = []
+  for stock in portfolio.stocks:
+    if index == None:
+      idx = getdata.getIndexTicker(getdata.getData([stock.ticker],getdata.getParamDict('stock exchange')))
+    else:
+      idx = index
+    indexCurrVal = getdata.get_history([idx],
+                                          dt.today()-relativedelta(days=5))[-1:]['Close'].values[0]
+    try:
+      indexPrevVal = oldTable.ix[stock.ticker]['%Gain Index (Period)']
+    except:
+      indexPrevVal = getdata.get_history([idx],
+                                          dt.today()-relativedelta(days=lookbackDays))['Close'].values[0]
+    dftemp = pd.DataFrame(data=[0],index=[0])
+    #dftemp['Date'] = dt.today()
+    dftemp['Symbol'] = stock.ticker
+    dftemp['Name'] = getdata.getData([stock.ticker],"n")
+    dftemp['Price'] = getdata.get_history([stock.ticker],
+                                          dt.today()-relativedelta(days=5))[-1:]['Close'].values[0]
+    dftemp['Number Owned'] = stock.shares_owned
+    dftemp['Current Value'] = dftemp['Price']*dftemp['Number Owned']
+    try:
+      dftemp['Previous Value'] = oldTable.ix[stock.ticker]['Current Value']
+    except:
+      dftemp['Previous Value'] = dftemp['Number Owned']*getdata.get_history([stock.ticker],
+                                          dt.today()-relativedelta(days=lookbackDays))['Close'].values[0]
+    dftemp['%Gain (Period)'] = 100*(dftemp['Current Value'] - dftemp['Previous Value'])/dftemp['Previous Value']
+    dftemp['%Gain Index (Period)'] = 100*(indexCurrVal - indexPrevVal)/indexPrevVal
+    dftemp['Index'] = idx
+    dftemp['GainSt - GainIdx'] = dftemp['%Gain (Period)'] - dftemp['%Gain Index (Period)']
+    #if dftemp['%Gain Index (Period)'] > dftemp['%Gain (Period)']:
+    #  dftemp['Stock > Index'] = 'N'
+    #else:
+    #  dftemp['Stock > Index'] = 'Y'
+    dftemp['Total Investment'] = stock.investment
+    dftemp['%Total Gain'] = 100*(dftemp['Current Value'] - stock.investment)/stock.investment
+    dftemp = dftemp.drop(0,axis=1)
+    dftemp.index = dftemp['Symbol']
+    dftemp = dftemp.drop('Symbol',axis=1)
+    dfarr.append(dftemp)
+  dftoret = pd.concat(dfarr)
+  #dftoret = dftoret.sort(columns='Stock > Index',ascending=False)
+  dftoret = dftoret.sort(columns='GainSt - GainIdx',ascending=False)
+  dftoret = dftoret.drop('GainSt - GainIdx',axis=1)
+  dftoret['Rank'] = range(1,len(dftoret)+1)
+  if not silent:
+    print "Stocks doing better than the market:",dftoret[dftoret['%Gain (Period)']>dftoret['%Gain Index (Period)']].index.values
+    print "Stocks doing worse than the market:",dftoret[dftoret['%Gain (Period)']<dftoret['%Gain Index (Period)']].index.values
+  return dftoret
+
 def calc_sharpe_ratio_sym(data,symbol,lookbackDays,enddate=dt.today(),index=None,silent=False):
   #data: Dataframe containing at least date for the required time period for the required symbol and index
   #symbol: Symbol for which sharpe ratio is to be calculated
