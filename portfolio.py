@@ -20,7 +20,7 @@ class Portfolio(object):
         else:
             print "Added "+Stock.ticker+" to portfolio" 
             self.stocks = np.append(self.stocks,Stock)
-    def getDataForPortfolio(self,start_date):
+    def getHistoryForPortfolio(self,start_date):
         tickers = []
         for stock in self.stocks:
             ticker = stock.ticker
@@ -36,29 +36,33 @@ class Stock(object):
         self.ticker = ticker
         self.shares_owned = 0
         self.transactions = []
+        self.investment = 0
         print "Created stock object "+self.ticker
-    def addTransaction(self,ttype='B',num=0,date='1990/01/30'):
+    def addTransaction(self,price,ttype='B',num=0,date='1990/01/30'):
         transaction = {}
-        transaction['Date'] = getDateInDatetimeFormat(date)
         if (ttype != 'B') & (ttype != 'S'):
             print "ERROR:Invalid Transaction Type"
             return
         elif ttype == 'B':
             ttype = 'Bought'
-            self.shares_owned = self.shares_owned+num
+            self.shares_owned += num
+            self.investment += num*price
         elif ttype == 'S':
             if self.shares_owned >= num:
-                self.shares_owned = self.shares_owned-num
+                self.shares_owned -= num
+                self.investment -= num*price
             else:
                 print "ERROR: You couldn't have sold more shares than you owned"
                 return
             ttype = 'Sold'
-        transaction['Type'] = ttype
         if num == 0:
             print "ERROR:Num of shares in transaction must be > 0"
             return
         else:
             transaction['Number'] = num
+        transaction['Price'] = price
+        transaction['Date'] = getDateInDatetimeFormat(date)
+        transaction['Type'] = ttype
         self.transactions = np.append(self.transactions,transaction)
         print "Added Transaction to "+self.ticker+": "+ttype+" "+str(num)+" on "+str(date)
     def getTransactions(self,date=None,ttype=None):
@@ -91,8 +95,8 @@ def getDateInDatetimeFormat(date='1990/01/30'):
     if type(date) != dt:
         date_components = date.split('/')
         toret = dt(int(date_components[0]),
-               int(date.components[1]),
-               int(date.components[2]))
+               int(date_components[1]),
+               int(date_components[2]))
     else:
         toret = date
     return toret
