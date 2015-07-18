@@ -6,17 +6,20 @@ from dateutil.relativedelta import relativedelta
 import numpy as np
 import pandas.stats.moments as m
 
-def construct_ranking_table(portfolio,lookbackDays=None,oldTable=None,enddate=dt.today(),index=None,silent=False):
+def construct_ranking_table(portfolio,lookbackDays=None,oldTable=None,enddate=dt.today().date(),index=None,silent=False):
+#One,only one and exactly one of lookbackDays and oldTable should be specified.
   dfarr = []
   for stock in portfolio.stocks:
     if index == None:
       idx = getdata.getIndexTicker(getdata.getData([stock.ticker],getdata.getParamDict('stock exchange')))
     else:
       idx = index
+	
     indexCurrVal = getdata.get_history([idx],
                                           dt.today()-relativedelta(days=5))[-1:]['Close'].values[0]
     try:
-      indexPrevVal = oldTable.ix[stock.ticker]['%Gain Index (Period)']
+      indexPrevVal = getdata.get_history([idx],
+										oldTable.ix[stock.ticker]['Date'])['Close'].values[0]
     except:
       indexPrevVal = getdata.get_history([idx],
                                           dt.today()-relativedelta(days=lookbackDays))['Close'].values[0]
@@ -52,9 +55,10 @@ def construct_ranking_table(portfolio,lookbackDays=None,oldTable=None,enddate=dt
   dftoret = dftoret.sort(columns='GainSt - GainIdx',ascending=False)
   dftoret = dftoret.drop('GainSt - GainIdx',axis=1)
   dftoret['Rank'] = range(1,len(dftoret)+1)
+  dftoret['Date'] = np.repeat(enddate,dftoret.shape[0])
   if not silent:
     print "Stocks doing better than the market:",dftoret[dftoret['%Gain (Period)']>dftoret['%Gain Index (Period)']].index.values
-    print "Stocks doing worse than the market:",dftoret[dftoret['%Gain (Period)']<dftoret['%Gain Index (Period)']].index.values
+    print "Stocks doing worse than the market:",dftoret[dftoret['%Gain (Period)']<dftoret['%Gain Index (Period)']].index.values[::-1]
   return dftoret
 
 def calc_sharpe_ratio_sym(data,symbol,lookbackDays,enddate=dt.today(),index=None,silent=False):

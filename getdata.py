@@ -9,7 +9,7 @@ import numpy as np
 
 def getIndexTicker(index):
 #CHANGE THIS FOR CHANGES IN BASELINE
-  if index == '"NasdaqNM"':
+  if index in ['"NasdaqNM"','"NMS"']:
     return "^IXIC"
   else:
     return "^GSPC"
@@ -114,4 +114,14 @@ def get_history(symbols,start_date,end_date=dt.now()):
   for symbol in symbols:
       dfarr.append(DataReader(symbol,"yahoo",start=start_date,end=end_date))
   return pd.concat(dfarr,keys=symbols)
+  
+def get_dividend_history(symbols,start_date,end_date):
+	symbolstr = ''
+	for symbol in symbols:
+		symbolstr = symbolstr+'+'+symbol
+		url = 'http://finance.yahoo.com/d/?s=%s&f=%s' %(symbolstr,paramString)
+		#print url
+	return urllib2.urlopen(url).read().strip()
+https://code.google.com/p/yahoo-finance-managed/wiki/csvHistQuotesDownload
+http://ichart.yahoo.com/table.csv?s=GOOG&a=0&b=1&c=2000&d=0&e=31&f=2010&g=w&ignore=.csv
   
