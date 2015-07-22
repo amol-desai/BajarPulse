@@ -115,13 +115,20 @@ def get_history(symbols,start_date,end_date=dt.now()):
       dfarr.append(DataReader(symbol,"yahoo",start=start_date,end=end_date))
   return pd.concat(dfarr,keys=symbols)
   
-def get_dividend_history(symbols,start_date,end_date):
-	symbolstr = ''
-	for symbol in symbols:
-		symbolstr = symbolstr+'+'+symbol
-		url = 'http://finance.yahoo.com/d/?s=%s&f=%s' %(symbolstr,paramString)
-		#print url
-	return urllib2.urlopen(url).read().strip()
-https://code.google.com/p/yahoo-finance-managed/wiki/csvHistQuotesDownload
-http://ichart.yahoo.com/table.csv?s=GOOG&a=0&b=1&c=2000&d=0&e=31&f=2010&g=w&ignore=.csv
-  
+def get_dividend_history(symbols,start_date,end_date=dt.today().date()):
+#https://code.google.com/p/yahoo-finance-managed/wiki/csvHistQuotesDownload  
+    dfarr = []
+    try:
+        #print symbols,start_date,end_date
+        url = 'http://ichart.yahoo.com/table.csv?s=%s&a=%s&b=%s&c=%s&d=%s&e=%s&f=%s&g=v&ignore=.csv' %(symbols,
+                                                                                                       start_date.month,start_date.day,start_date.year,
+                                                                                                       end_date.month,end_date.day,end_date.year)
+        #print url
+        return pd.DataFrame.from_csv(url)
+    except urllib2.HTTPError:
+        return pd.DataFrame(columns=['Dividends'])
+    #except:
+        #for symbol in symbols:
+        #    print symbol,start_date,end_date
+         #   dfarr.append(get_dividend_history(symbol,start_date,end_date))
+        #return pd.concat(dfarr,keys=symbols)

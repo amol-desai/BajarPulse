@@ -24,19 +24,31 @@ def construct_ranking_table(portfolio,lookbackDays=None,oldTable=None,enddate=dt
       indexPrevVal = getdata.get_history([idx],
                                           dt.today()-relativedelta(days=lookbackDays))['Close'].values[0]
     dftemp = pd.DataFrame(data=[0],index=[0])
-    #dftemp['Date'] = dt.today()
+	
     dftemp['Symbol'] = stock.ticker
     dftemp['Name'] = getdata.getData([stock.ticker],"n")
     dftemp['Price'] = getdata.get_history([stock.ticker],
-                                          dt.today()-relativedelta(days=5))[-1:]['Close'].values[0]
-    dftemp['Number Owned'] = stock.shares_owned
+                                          enddate-relativedelta(days=5))[-1:]['Close'].values[0]
+    dftemp['Number Owned'] = stock.getSharesOwned()
     dftemp['Current Value'] = dftemp['Price']*dftemp['Number Owned']
-    try:
-      dftemp['Previous Value'] = oldTable.ix[stock.ticker]['Current Value']
-    except:
-      dftemp['Previous Value'] = dftemp['Number Owned']*getdata.get_history([stock.ticker],
-                                          dt.today()-relativedelta(days=lookbackDays))['Close'].values[0]
-    dftemp['%Gain (Period)'] = 100*(dftemp['Current Value'] - dftemp['Previous Value'])/dftemp['Previous Value']
+#    try:
+#      dftemp['Previous Value'] = oldTable.ix[stock.ticker]['Current Value']
+#    except:
+#        prev_number_owned = dftemp['Number Owned']
+#        for transaction in stock.transactions:
+#            if transaction['Date'] > (enddate-relativedelta(days=lookbackDays)):
+#                if transaction['Type'] == 'Bought':
+#                    prev_number_owned = prev_number_owned - transaction['Number']
+#                elif transaction['Type'] == 'Sold':
+#                    prev_number_owned = prev_number_owned + transaction['Number']
+#        dftemp['Previous Value'] = prev_number_owned*getdata.get_history([stock.ticker],
+#                                          enddate-relativedelta(days=lookbackDays))['Close'].values[0]
+#    dftemp['%Gain (Period)'] = 100*(dftemp['Current Value'] - dftemp['Previous Value'])/dftemp['Previous Value']
+    prev_adj_close = getdata.get_history([stock.ticker],
+                                         enddate-relativedelta(days=lookbackDays))['Adj Close'].values[0]
+    dftemp['%Gain (Period)'] = 100*((getdata.get_history([stock.ticker],
+                                                        enddate-relativedelta(days=5))[-1:]['Adj Close'].values[0]
+                                    - prev_adj_close)/prev_adj_close)
     dftemp['%Gain Index (Period)'] = 100*(indexCurrVal - indexPrevVal)/indexPrevVal
     dftemp['Index'] = idx
     dftemp['GainSt - GainIdx'] = dftemp['%Gain (Period)'] - dftemp['%Gain Index (Period)']

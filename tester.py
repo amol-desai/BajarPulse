@@ -15,8 +15,8 @@ stocks_n_transactions = {'AAPL':
 							},
 						'MRO':
 							{
-							1: {'price': 25, 'ttype': 'B', 'num': 100, 'date': '2014/06/01'},
-							2: {'price': 27, 'ttype': 'S', 'num': 50, 'date': '2015/06/01'},
+							1: {'price': 25, 'ttype': 'B', 'num': 1000, 'date': '2014/06/01'},
+							2: {'price': 27, 'ttype': 'S', 'num': 500, 'date': '2015/06/01'},
 							}
 						}
 def createPortfolio():
@@ -32,7 +32,7 @@ def createPortfolio():
 		p.addStock(stock)
 	return p
 	
-#print analyzer.construct_ranking_table(createPortfolio(),lookbackDays=30,oldTable=None,enddate=dt.today().date(),index=None,silent=False)
+print analyzer.construct_ranking_table(createPortfolio(),lookbackDays=30,oldTable=None,enddate=dt.today().date(),index=None,silent=False)
 
 #def createPortfolioFromCsv(csv):
 	
